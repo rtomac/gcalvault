@@ -1,4 +1,5 @@
 import os
+import re
 import json
 from pathlib import Path
 import shutil
@@ -58,7 +59,7 @@ def test_version(capsys, args):
 
     # Success if output casts to a float w/o throwing exception
     captured = capsys.readouterr()
-    float(captured.out.strip())
+    assert re.match(r"^\d\.\d(\.\d)?$", captured.out.strip())
 
 @pytest.mark.parametrize(
     "args, expected_properties", [

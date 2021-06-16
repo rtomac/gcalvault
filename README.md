@@ -39,7 +39,7 @@ Simply export calendars, do not save version history:
 gcalvault sync foo.bar@gmail.com --export-only
 ```
 
-See the [CLI help](src/USAGE.txt) for full usage and other notes.
+See the [CLI help](https://github.com/rtomac/gcalvault/blob/main/src/USAGE.txt) for full usage and other notes.
 
 # Installation
 
@@ -74,9 +74,18 @@ gcalvault sync foo.bar@gmail.com --client-id my_client_id --client-secret my_cli
 
 # Development
 
-## Install requirements locally for IDE
+Source repository:<br>
+http://github.com/rtomac/gcalvault
+
+## Install dependencies locally (for IDE)
 ```
 make devenv
+. ./.devenv/bin/activate
+```
+
+## Build distribution and Docker image
+```
+make build
 ```
 
 ## Build and test locally
@@ -89,7 +98,14 @@ make test
 make run user=foo.bar@gmail.com
 ```
 
-See targets and variables in [Makefile](Makefile) for more options.
+## Publish to PyPi
+```
+make dist
+twine upload --repository testpypi dist/gcalvault-latest.tar.gz
+twine upload dist/gcalvault-latest.tar.gz
+```
+
+See targets and variables in [Makefile](https://github.com/rtomac/gcalvault/blob/main/Makefile) for more options.
 
 # License
 

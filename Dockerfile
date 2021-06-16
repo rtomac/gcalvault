@@ -1,11 +1,9 @@
 FROM python:3
 
-COPY setup.py /usr/local/src/gcalvault/
-COPY bin /usr/local/src/gcalvault/bin
-COPY src /usr/local/src/gcalvault/src
-COPY tests /usr/local/src/gcalvault/tests
-RUN cd /usr/local/src/gcalvault \
-    && pip install . \
+COPY dist/gcalvault-latest.tar.gz /usr/local/src/
+
+RUN cd /usr/local/src \
+    && pip install gcalvault-latest.tar.gz[test] \
     && mkdir -p /root/gcalvault
 
 WORKDIR /root/gcalvault
