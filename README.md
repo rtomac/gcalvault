@@ -47,6 +47,8 @@ See the [CLI help](https://github.com/rtomac/gcalvault/blob/main/src/USAGE.txt) 
 
 ```
 docker run -it --rm \
+    -v ${HOME}/.gcalvault:/root/.gcalvault \
+    -v ${PWD}:/root/gcalvault \
     rtomac/gcalvault sync foo.bar@gmail.com
 ```
 
