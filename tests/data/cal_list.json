@@ -1,0 +1,112 @@
+{
+    "kind": "calendar#calendarList",
+    "etag": "\"abc\"",
+    "nextSyncToken": "abc",
+    "items": [
+        {
+            "kind": "calendar#calendarListEntry",
+            "etag": "\"abc\"",
+            "id": "foo.bar@gmail.com",
+            "summary": "foo.bar@gmail.com",
+            "timeZone": "America/Los_Angeles",
+            "colorId": "8",
+            "backgroundColor": "#16a765",
+            "foregroundColor": "#000000",
+            "selected": true,
+            "accessRole": "owner",
+            "defaultReminders": [
+                {
+                    "method": "popup",
+                    "minutes": 10
+                }
+            ],
+            "notificationSettings": {
+                "notifications": [
+                    {
+                        "type": "eventCreation",
+                        "method": "email"
+                    },
+                    {
+                        "type": "eventChange",
+                        "method": "email"
+                    },
+                    {
+                        "type": "eventCancellation",
+                        "method": "email"
+                    },
+                    {
+                        "type": "eventResponse",
+                        "method": "email"
+                    }
+                ]
+            },
+            "primary": true,
+            "conferenceProperties": {
+                "allowedConferenceSolutionTypes": [
+                    "hangoutsMeet"
+                ]
+            }
+        },
+        {
+            "kind": "calendar#calendarListEntry",
+            "etag": "\"abc\"",
+            "id": "foo.baz@gmail.com",
+            "summary": "foo.baz@gmail.com",
+            "timeZone": "America/Los_Angeles",
+            "summaryOverride": "Foo Baz",
+            "colorId": "23",
+            "backgroundColor": "#cd74e6",
+            "foregroundColor": "#000000",
+            "accessRole": "reader",
+            "defaultReminders": [],
+            "conferenceProperties": {
+                "allowedConferenceSolutionTypes": [
+                    "hangoutsMeet"
+                ]
+            }
+        },
+        {
+            "kind": "calendar#calendarListEntry",
+            "etag": "\"abc\"",
+            "id": "family123456789@group.calendar.google.com",
+            "summary": "Family",
+            "timeZone": "UTC",
+            "summaryOverride": "Family",
+            "colorId": "15",
+            "backgroundColor": "#9fc6e7",
+            "foregroundColor": "#000000",
+            "selected": true,
+            "accessRole": "writer",
+            "defaultReminders": [
+                {
+                    "method": "popup",
+                    "minutes": 10
+                }
+            ],
+            "conferenceProperties": {
+                "allowedConferenceSolutionTypes": [
+                    "hangoutsMeet"
+                ]
+            }
+        },
+        {
+            "kind": "calendar#calendarListEntry",
+            "etag": "\"abc\"",
+            "id": "en.usa#holiday@group.v.calendar.google.com",
+            "summary": "Holidays in United States",
+            "description": "Holidays and Observances in United States",
+            "timeZone": "America/Los_Angeles",
+            "colorId": "5",
+            "backgroundColor": "#ff7537",
+            "foregroundColor": "#000000",
+            "selected": true,
+            "accessRole": "reader",
+            "defaultReminders": [],
+            "conferenceProperties": {
+                "allowedConferenceSolutionTypes": [
+                    "hangoutsMeet"
+                ]
+            }
+        }
+    ]
+}

@@ -1,0 +1,7 @@
+.DS_Store
+/.devenv/
+/.vscode/
+/.conf/
+/.output/
+.pytest_cache/
+__pycache__/

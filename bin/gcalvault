@@ -1,0 +1,17 @@
+#!/usr/bin/env python3
+
+import sys
+from gcalvault import Gcalvault, GcalvaultError
+
+
+def main():
+    try:
+        Gcalvault().run(sys.argv[1:])
+        return 0
+    except GcalvaultError as e:
+        print(f"Error: {e.message}", file=sys.stderr)
+        return e.exit_code
+    
+
+if __name__ == "__main__":
+    sys.exit(main())

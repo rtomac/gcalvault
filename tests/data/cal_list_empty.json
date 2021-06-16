@@ -1,0 +1,6 @@
+{
+    "kind": "calendar#calendarList",
+    "etag": "\"abc\"",
+    "nextSyncToken": "abc",
+    "items": []
+}

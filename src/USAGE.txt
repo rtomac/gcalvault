@@ -1,0 +1,43 @@
+Exports all of a user's Google Calendars to iCal/ICS format for backup (or portability).
+
+Usage:
+  gcalvault sync <user> [<cal-ids>...]
+  gcalvault sync <user> [<cal-ids>...] --export-only
+  gcalvault -h | --help
+  gcalvault --version
+
+Options:
+  user              Required. Google username/email address,
+                    e.g. foo.bar@gmail.com.
+  cal-ids           Optional. IDs of specific calendars to export. If provided,
+                    exports just the specified calendars. If not provided, all
+                    of the user's calendars are discovered and exported
+                    (default behavior).
+  -e --export-only  Export calendars to output dir only, do not create and
+                    manage version history in a vault.
+  -i --ignore-role  Access roles to ignore when exporting calendars, which can
+                    be one of "owner", "writer", or "reader". Option can be
+                    provided multiple times one the command line to ignore
+                    multiple. Typical usage would be to export just calendars
+                    where user is owner and/or where user has write access.
+  -c --conf-dir     Directory where configuration is stored (e.g. access
+                    token). Defaults to ~/.gcalvault.
+  -o --output-dir --vault-dir
+                    Directory to which calendar .ics files are exported
+                    and/or stored. Defaults to the current working directory.
+  --client-id       Recommended. Custom OAuth2 client ID you've provisioned
+                    with Google to use when authorizing user access.
+  --client-secret   Client secret for custom client ID provided
+                    via --client-id.
+  -h --help         Show this help screen.
+  --version         Show the program's version.
+
+This program will discover all of a user's calendars (via Google Calendar
+API) and export each of them as an .ics file. Alternately, it can be used to
+export a subset of specific calendars.
+
+This program's sync function is meant to be used in one of two ways:
+- As a simple export utility (via --export-only).
+- As a backup utility, with version history for each of the calendars exported
+  (default behavior). Version history is stored under the covers in a git
+  repository managed by gcalvault.
