@@ -36,7 +36,7 @@ setup(
         "test": [
             "pytest==6.*",
         ],
-        "deploy": [
+        "release": [
             "twine",
         ],
     },

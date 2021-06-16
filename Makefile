@@ -13,7 +13,7 @@ all: run
 .PHONY: devenv
 devenv:
 	[ ! -d "./.devenv" ] && virtualenv .devenv || true
-	. ./.devenv/bin/activate && pip install '.[test,deploy]'
+	. ./.devenv/bin/activate && pip install '.[test,release]'
 
 .PHONY: dist
 dist:
@@ -54,3 +54,16 @@ run: build
 		-v ${PWD}/.conf:/root/.gcalvault \
 		-v ${PWD}/.output:/root/gcalvault \
 		${image_name}:local sync ${user}
+
+.PHONY: release
+release: test
+	twine upload --repository testpypi dist/gcalvault-${pkg_version}.tar.gz
+	
+	twine upload dist/gcalvault-${pkg_version}.tar.gz
+
+	docker buildx build \
+		--tag "${container_hub_acct}/${image_name}:${image_tag}" \
+		--tag "${container_hub_acct}/${image_name}:${image_version_tag}" \
+		--platform "${image_platforms}" \
+		--push \
+		.

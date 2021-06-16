@@ -98,11 +98,9 @@ make test
 make run user=foo.bar@gmail.com
 ```
 
-## Publish to PyPi
+## Release to PyPi and Docker Hub
 ```
-make dist
-twine upload --repository testpypi dist/gcalvault-latest.tar.gz
-twine upload dist/gcalvault-latest.tar.gz
+make release
 ```
 
 See targets and variables in [Makefile](https://github.com/rtomac/gcalvault/blob/main/Makefile) for more options.
