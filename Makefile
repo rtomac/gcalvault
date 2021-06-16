@@ -8,7 +8,7 @@ image_tag=latest
 image_version_tag=${pkg_version}
 image_platforms=linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6
 
-all: run
+all: build
 
 .PHONY: devenv
 devenv:
