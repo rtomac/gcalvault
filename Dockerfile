@@ -1,4 +1,6 @@
-FROM python:3
+FROM python:3.9-alpine
+
+RUN apk add --no-cache bash git
 
 COPY dist/gcalvault-latest.tar.gz /usr/local/src/
 

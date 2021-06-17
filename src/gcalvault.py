@@ -177,7 +177,7 @@ class Gcalvault:
         file_path = os.path.join(self.output_dir, file_name)
         with open(file_path, 'w') as file:
             file.write(ical)
-        print(f"Saved calendar '{calendar.id}' to {self.output_dir}")
+        print(f"Saved calendar '{calendar.id}'")
         return file_name
 
     def _get_vault_repo(self):
@@ -193,6 +193,7 @@ class GcalvaultError(Exception):
 
     def __init__(self, message, exit_code=1):
         self.message = message
+        self.exit_code = exit_code
 
 
 class GitVaultRepo():

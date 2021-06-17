@@ -1,11 +1,11 @@
 SHELL=/bin/bash
 
-pkg_version="`cat src/VERSION.txt | xargs`"
+pkg_version:=$(shell cat src/VERSION.txt | xargs)
 
 container_hub_acct=rtomac
 image_name=gcalvault
 image_tag=latest
-image_version_tag=${pkg_version}
+image_version_tag:=${pkg_version}
 image_platforms=linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6
 
 all: build
