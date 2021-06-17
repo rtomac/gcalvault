@@ -59,7 +59,7 @@ def test_version(capsys, args):
 
     # Success if output casts to a float w/o throwing exception
     captured = capsys.readouterr()
-    assert re.match(r"^\d\.\d(\.\d)?$", captured.out.strip())
+    assert re.match(r"^\d+\.\d+(\.\d+)?$", captured.out.strip())
 
 @pytest.mark.parametrize(
     "args, expected_properties", [
@@ -71,6 +71,10 @@ def test_version(capsys, args):
             {'export_only': True}),
         (["noop", "foo.bar@gmail.com", "-e"],
             {'export_only': True}),
+        (["noop", "foo.bar@gmail.com", "--clean"],
+            {'clean': True}),
+        (["noop", "foo.bar@gmail.com", "-f"],
+            {'clean': True}),
         (["noop", "foo.bar@gmail.com", "--ignore-role", "reader"],
             {'ignore_roles': ["reader"]}),
         (["noop", "foo.bar@gmail.com", "-i", "reader", "-i", "writer"],
@@ -190,7 +194,7 @@ def test_sync_new_authorization_doesnt_match():
 
     gc = Gcalvault(
         google_oauth2=_get_google_oauth2_mock(new_authorization=True, email="john.doe@gmail.com"),
-        google_apis=_get_google_apis_mock(empty_cal_list=True))
+        google_apis=_get_google_apis_mock(cal_list='empty'))
     with pytest.raises(GcalvaultError):
         gc.run(["sync", "foo.bar@gmail.com", "-c", conf_dir, "-o", output_dir])
 
@@ -199,8 +203,59 @@ def test_sync_new_authorization_does_match():
 
     gc = Gcalvault(
         google_oauth2=_get_google_oauth2_mock(new_authorization=True, email="foo.bar@gmail.com"),
-        google_apis=_get_google_apis_mock(empty_cal_list=True))
+        google_apis=_get_google_apis_mock(cal_list='empty'))
     gc.run(["sync", "foo.bar@gmail.com", "-c", conf_dir, "-o", output_dir])
+
+def test_clean():
+    (conf_dir, output_dir) =  _setup_dirs()
+
+    gc = Gcalvault(
+        google_oauth2=_get_google_oauth2_mock(),
+        google_apis=_get_google_apis_mock())
+    gc.run(["sync", "foo.bar@gmail.com", "-c", conf_dir, "-o", output_dir])
+    expected_files = [
+        "foo.bar@gmail.com.ics",
+        "foo.baz@gmail.com.ics",
+        "family123456789@group.calendar.google.com.ics",
+        "en.usa#holiday@group.v.calendar.google.com.ics",
+    ]
+    _assert_ics_files_match(output_dir, expected_files)
+
+    _assert_git_repo_state(output_dir, commit_count=2, last_commit_file_count=4) # initial commit + 1, 4 ics files
+
+    gc = Gcalvault(
+        google_oauth2=_get_google_oauth2_mock(),
+        google_apis=_get_google_apis_mock(cal_list='less'))
+    gc.run(["sync", "foo.bar@gmail.com", "--clean", "-c", conf_dir, "-o", output_dir])
+    expected_files_after = [
+        "foo.bar@gmail.com.ics",
+        "family123456789@group.calendar.google.com.ics",
+    ]
+    _assert_ics_files_match(output_dir, expected_files_after)
+
+    _assert_git_repo_state(output_dir, commit_count=3, last_commit_file_count=2) # 1 additional commit, 2 file removals
+
+def test_without_clean():
+    (conf_dir, output_dir) =  _setup_dirs()
+
+    gc = Gcalvault(
+        google_oauth2=_get_google_oauth2_mock(),
+        google_apis=_get_google_apis_mock())
+    gc.run(["sync", "foo.bar@gmail.com", "-c", conf_dir, "-o", output_dir])
+    expected_files = [
+        "foo.bar@gmail.com.ics",
+        "foo.baz@gmail.com.ics",
+        "family123456789@group.calendar.google.com.ics",
+        "en.usa#holiday@group.v.calendar.google.com.ics",
+    ]
+    _assert_ics_files_match(output_dir, expected_files)
+
+    gc = Gcalvault(
+        google_oauth2=_get_google_oauth2_mock(),
+        google_apis=_get_google_apis_mock(cal_list='less'))
+    gc.run(["sync", "foo.bar@gmail.com", "-c", conf_dir, "-o", output_dir])
+    expected_files_after = expected_files
+    _assert_ics_files_match(output_dir, expected_files_after)
 
 def test_sync_export_only():
     (conf_dir, output_dir) =  _setup_dirs()
@@ -210,7 +265,7 @@ def test_sync_export_only():
         google_apis=_get_google_apis_mock())
     gc.run(["sync", "foo.bar@gmail.com", "foo.bar@gmail.com", "-e", "-c", conf_dir, "-o", output_dir])
 
-    assert not os.path.exists(os.path.join(output_dir, ".git"))
+    _assert_git_repo_state(output_dir, repo_exists=False)
     assert os.path.exists(os.path.join(output_dir, "foo.bar@gmail.com.ics"))
 
 def test_new_git_repo():
@@ -218,11 +273,10 @@ def test_new_git_repo():
 
     gc = Gcalvault(
         google_oauth2=_get_google_oauth2_mock(),
-        google_apis=_get_google_apis_mock(empty_cal_list=True))
+        google_apis=_get_google_apis_mock(cal_list='empty'))
     gc.run(["sync", "foo.bar@gmail.com", "-c", conf_dir, "-o", output_dir])
 
-    assert os.path.exists(os.path.join(output_dir, ".git"))
-    assert len(_get_git_commits(output_dir)) == 1 # initial commit
+    _assert_git_repo_state(output_dir, commit_count=1) # initial commit
 
 def test_git_commits():
     (conf_dir, output_dir) =  _setup_dirs()
@@ -232,9 +286,7 @@ def test_git_commits():
         google_apis=_get_google_apis_mock())
     gc.run(["sync", "foo.bar@gmail.com", "-c", conf_dir, "-o", output_dir])
 
-    assert os.path.exists(os.path.join(output_dir, ".git"))
-    assert len(_get_git_commits(output_dir)) == 2 # initial commit + 1
-    assert _get_git_commits(output_dir)[0].stats.total['files'] == 4 # ics files
+    _assert_git_repo_state(output_dir, commit_count=2, last_commit_file_count=4) # initial commit + 1, 4 ics files
 
 
 def _get_google_oauth2_mock(new_authorization=False, email="foo.bar@gmail.com"):
@@ -248,13 +300,12 @@ def _get_google_oauth2_mock(new_authorization=False, email="foo.bar@gmail.com"):
 
     return google_oauth2
 
-def _get_google_apis_mock(empty_cal_list=False):
+def _get_google_apis_mock(cal_list=None):
     def request_cal_as_ical(cal_id, credentials):
         return _read_data_file(cal_id + ".ics")
 
     google_apis = GoogleApis()
-
-    cal_list_file = "cal_list_empty.json" if empty_cal_list else "cal_list.json"
+    cal_list_file = f"cal_list_{cal_list}.json" if cal_list else "cal_list.json"
     google_apis.request_cal_list = MagicMock(return_value=_read_data_file_json(cal_list_file))
     
     google_apis.request_cal_as_ical = request_cal_as_ical
@@ -286,6 +337,11 @@ def _read_data_file_json(file_name):
 def _read_file(dir_path, file_name):
     return Path(dir_path, file_name).read_text()
 
-def _get_git_commits(output_dir):
-    repo = Repo(output_dir)
-    return list(repo.iter_commits('master', max_count=10))
+def _assert_git_repo_state(output_dir, repo_exists=True, commit_count=None, last_commit_file_count=None):
+    assert os.path.exists(os.path.join(output_dir, ".git")) == repo_exists
+    if commit_count is not None or last_commit_file_count is not None:
+        commits = list(Repo(output_dir).iter_commits('master', max_count=10))
+        if commit_count is not None:
+            assert len(commits) == commit_count
+        if last_commit_file_count is not None:
+            assert commits[0].stats.total['files'] == last_commit_file_count

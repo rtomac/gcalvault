@@ -42,8 +42,9 @@ debug: build
 		-v ${PWD}/.conf:/root/.gcalvault \
 		-v ${PWD}/.output:/root/gcalvault \
 		-v ${PWD}/bin/gcalvault:/usr/local/bin/gcalvault \
-		-v ${PWD}/src:/usr/local/lib/python3.8/site-packages/gcalvault \
+		-v ${PWD}/src:/usr/local/lib/python3.9/site-packages/gcalvault \
 		-v ${PWD}/tests:/usr/local/src/gcalvault/tests \
+		--workdir /usr/local/src/gcalvault \
 		--entrypoint /bin/bash \
 		${image_name}:local
 

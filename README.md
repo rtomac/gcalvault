@@ -10,7 +10,7 @@ Features:
 
 # How it works
 
-- Uses Google's [Identity Provider](https://developers.google.com/identity/protocols/oauth2) to authentication (via OAuth2/OIDC)
+- Uses Google's [Identity Provider](https://developers.google.com/identity/protocols/oauth2) to authenticate (via OAuth2/OIDC)
 - Uses Google's [Calendar API](https://developers.google.com/calendar/api/v3/reference) to discover a user's calendars
 - Uses Google's [CalDav endpoints]() to download ICal/ICS calendars
 - Uses [GitPython](https://gitpython.readthedocs.io) to manage local git repo for version history under the covers
@@ -19,12 +19,12 @@ Features:
 
 Some example commands...
 
-Sync all calendars for foo.bar@gmail.com user:
+Sync all calendars for `foo.bar@gmail.com` user:
 ```
 gcalvault sync foo.bar@gmail.com
 ```
 
-Sync one specific calendars:
+Sync one specific calendar:
 ```
 gcalvault sync foo.bar@gmail.com family123@group.calendar.google.com
 ```

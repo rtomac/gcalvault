@@ -3,6 +3,7 @@
 from copy import error
 import os
 from collections import namedtuple
+import glob
 import requests
 import urllib.parse
 import pathlib
@@ -29,8 +30,6 @@ DEFAULT_CLIENT_SECRET = "pLKRSKrIIWw7K-CD1DWWV2_Y"
 
 COMMANDS = ['sync', 'noop']
 
-Calendar = namedtuple('Calendar', ['id', 'name', 'access_role'])
-
 dirname = os.path.dirname(__file__)
 usage_file_path = os.path.join(dirname, "USAGE.txt")
 version_file_path = os.path.join(dirname, "VERSION.txt")
@@ -43,6 +42,7 @@ class Gcalvault:
         self.user = None
         self.includes = []
         self.export_only = False
+        self.clean = False
         self.ignore_roles = []
         self.conf_dir = os.path.expanduser("~/.gcalvault")
         self.output_dir = os.getcwd()
@@ -77,12 +77,22 @@ class Gcalvault:
             self._repo = GitVaultRepo("gcalvault", self.output_dir, [".ics"])
         
         calendars = self._get_calendars(credentials)
-        for calendar in calendars:
-            print(f"Downloading calendar '{calendar.name}'")
-            ical = self._google_apis.request_cal_as_ical(calendar.id, credentials)
-            file_name = self._save_ics(calendar, ical)
-            if self._repo:
-                self._repo.add_file(file_name)
+        
+        if self.ignore_roles:
+            calendars = [cal for cal in calendars if cal.access_role not in self.ignore_roles]
+
+        if self.includes:
+            calendars = [cal for cal in calendars if cal.id in self.includes]
+        
+        cal_ids = [cal.id for cal in calendars]
+        for include in self.includes:
+            if include not in cal_ids:
+                raise GcalvaultError(f"Specified calendar '{include}' was not found")
+        
+        if self.clean:
+            self._clean_output_dir(calendars)
+
+        self._dl_and_save_calendars(calendars, credentials)
 
         if self._repo:
             self._repo.commit("gcalvault sync")
@@ -91,8 +101,8 @@ class Gcalvault:
         try:
             (opts, pos_args) = getopt.gnu_getopt(
                 cli_args,
-                'ei:c:o:hv',
-                ['export-only', 'ignore-role=',
+                'efi:c:o:h',
+                ['export-only', 'clean', 'ignore-role=',
                     'conf-dir=', 'output-dir=', 'vault-dir=',
                     'client-id=', 'client-secret=',
                     'help', 'version',]
@@ -103,6 +113,8 @@ class Gcalvault:
         for opt, val in opts:
             if opt in ['-e', '--export-only']:
                 self.export_only = True
+            elif opt in ['-f', '--clean']:
+                self.clean = True
             elif opt in ['-i', '--ignore-role']:
                 self.ignore_roles.append(val.lower())
             elif opt in ['-c', '--conf-dir']:
@@ -156,29 +168,33 @@ class Gcalvault:
         calendars = []
         calendar_list = self._google_apis.request_cal_list(credentials)
         for item in calendar_list['items']:
-            if len(self.includes) > 0 and item['id'] not in self.includes:
-                print(f"Skipping calendar '{item['id']}'")
-                continue
-            if item['accessRole'] in self.ignore_roles:
-                print(f"Skipping calendar '{item['id']}', access role '{item['accessRole']}'")
-                continue
             calendars.append(
                 Calendar(item['id'], item['summary'], item['accessRole']))
-        
-        cal_ids_found = map(lambda x: x.id, calendars)
-        for include in self.includes:
-            if include not in cal_ids_found:
-                raise GcalvaultError(f"Specified calendar '{include}' was not found")
-
         return calendars
 
+    def _clean_output_dir(self, calendars):
+        cal_file_names = [cal.file_name for cal in calendars]
+        file_names_on_disk = [os.path.basename(file).lower() for file in glob.glob(os.path.join(self.output_dir, "*.ics"))]
+        for file_name_on_disk in file_names_on_disk:
+            if file_name_on_disk not in cal_file_names:
+                os.remove(os.path.join(self.output_dir, file_name_on_disk))
+                if self._repo:
+                    self._repo.remove_file(file_name_on_disk)
+                print(f"Removed file '{file_name_on_disk}'")
+    
+    def _dl_and_save_calendars(self, calendars, credentials):
+        for calendar in calendars:
+            print(f"Downloading calendar '{calendar.name}'")
+            ical = self._google_apis.request_cal_as_ical(calendar.id, credentials)
+            self._save_ics(calendar, ical)
+            if self._repo:
+                self._repo.add_file(calendar.file_name)
+
     def _save_ics(self, calendar, ical):
-        file_name = f"{calendar.id}.ics"
-        file_path = os.path.join(self.output_dir, file_name)
+        file_path = os.path.join(self.output_dir, calendar.file_name)
         with open(file_path, 'w') as file:
             file.write(ical)
         print(f"Saved calendar '{calendar.id}'")
-        return file_name
 
     def _get_vault_repo(self):
         try:
@@ -187,6 +203,16 @@ class Gcalvault:
             repo = Repo.init(self.output_dir)
             print("Created gcalvault repository")
             return repo
+
+
+class Calendar():
+
+    def __init__(self, id, name, access_role):
+        self.id = id
+        self.name = name
+        self.access_role = access_role
+
+        self.file_name = f"{self.id.strip().lower()}.ics"
 
 
 class GcalvaultError(Exception):
@@ -210,6 +236,9 @@ class GitVaultRepo():
     
     def add_file(self, file_name):
         self._repo.index.add(file_name)
+    
+    def remove_file(self, file_name):
+        self._repo.index.remove([file_name], working_tree=True)
     
     def commit(self, message):
         changes = self._repo.index.diff(self._repo.head.commit)
