@@ -169,7 +169,7 @@ class Gcalvault:
         calendar_list = self._google_apis.request_cal_list(credentials)
         for item in calendar_list['items']:
             calendars.append(
-                Calendar(item['id'], item['summary'], item['accessRole']))
+                Calendar(item['id'], item['summary'], item['etag'], item['accessRole']))
         return calendars
 
     def _clean_output_dir(self, calendars):
@@ -183,33 +183,35 @@ class Gcalvault:
                 print(f"Removed file '{file_name_on_disk}'")
     
     def _dl_and_save_calendars(self, calendars, credentials):
+        etags = ETagManager(self.conf_dir)
         for calendar in calendars:
-            print(f"Downloading calendar '{calendar.name}'")
-            ical = self._google_apis.request_cal_as_ical(calendar.id, credentials)
-            self._save_ics(calendar, ical)
-            if self._repo:
-                self._repo.add_file(calendar.file_name)
+            self._dl_and_save_calendar(calendar, credentials, etags)
+    
+    def _dl_and_save_calendar(self, calendar, credentials, etags):
+        cal_file_path = os.path.join(self.output_dir, calendar.file_name)
+        
+        etag_changed = etags.test_for_change_and_save(calendar.id, calendar.etag)
+        if os.path.exists(cal_file_path) and not etag_changed:
+            print(f"Calendar '{calendar.name}' is up to date")
+            return
 
-    def _save_ics(self, calendar, ical):
-        file_path = os.path.join(self.output_dir, calendar.file_name)
-        with open(file_path, 'w') as file:
+        print(f"Downloading calendar '{calendar.name}'")
+        ical = self._google_apis.request_cal_as_ical(calendar.id, credentials)
+        
+        with open(cal_file_path, 'w') as file:
             file.write(ical)
         print(f"Saved calendar '{calendar.id}'")
 
-    def _get_vault_repo(self):
-        try:
-            return Repo(self.output_dir)
-        except exc.InvalidGitRepositoryError:
-            repo = Repo.init(self.output_dir)
-            print("Created gcalvault repository")
-            return repo
+        if self._repo:
+            self._repo.add_file(calendar.file_name)
 
 
 class Calendar():
 
-    def __init__(self, id, name, access_role):
+    def __init__(self, id, name, etag, access_role):
         self.id = id
         self.name = name
+        self.etag = etag
         self.access_role = access_role
 
         self.file_name = f"{self.id.strip().lower()}.ics"
@@ -312,5 +314,38 @@ class GoogleApis():
     def _request_with_token(self, url, credentials, raise_for_status=True):
         headers = {'Authorization': f"Bearer {credentials.token}"}
         response = requests.get(url, headers=headers)
-        if raise_for_status: response.raise_for_status()
+        if raise_for_status:
+            response.raise_for_status()
         return response
+
+
+class ETagManager():
+
+    def __init__(self, conf_dir):
+        self._etag_cache_file_path = os.path.join(conf_dir, ".etags")
+        self._cache = self._read_cache_file()
+
+    def test_for_change_and_save(self, object_name, etag):
+        key = object_name.strip().lower()
+
+        if key in self._cache and self._cache[key] == etag:
+            return False
+        
+        self._cache[key] = etag
+        self._write_cache_file()
+        return True
+
+    def _read_cache_file(self):
+        cache = {}
+        if os.path.exists(self._etag_cache_file_path):
+            with open(self._etag_cache_file_path, 'r') as file:
+                for line in file:
+                    (key, value) = line.split()
+                    cache[key] = value
+        return cache
+
+    def _write_cache_file(self):
+        with open(self._etag_cache_file_path, 'w') as file:
+            for key in self._cache:
+                value = self._cache[key]
+                print(f"{key}\t{value}", file=file)

@@ -257,6 +257,106 @@ def test_without_clean():
     expected_files_after = expected_files
     _assert_ics_files_match(output_dir, expected_files_after)
 
+def test_etags_none_changed():
+    (conf_dir, output_dir) =  _setup_dirs()
+
+    gc = Gcalvault(
+        google_oauth2=_get_google_oauth2_mock(),
+        google_apis=_get_google_apis_mock(cal_list="less"))
+    gc.run(["sync", "foo.bar@gmail.com", "-c", conf_dir, "-o", output_dir])
+    expected_files = [
+        "foo.bar@gmail.com.ics",
+        "family123456789@group.calendar.google.com.ics",
+    ]
+    _assert_ics_files_match(output_dir, expected_files)
+
+    gc = Gcalvault(
+        google_oauth2=_get_google_oauth2_mock(),
+        google_apis=_get_google_apis_mock(cal_list="less", cal_files={}, cal_files_as_allowlist=True))
+    gc.run(["sync", "foo.bar@gmail.com", "-c", conf_dir, "-o", output_dir])
+    expected_files_after = expected_files
+    _assert_ics_files_match(output_dir, expected_files_after)
+
+def test_etags_none_changed_but_files_missing():
+    (conf_dir, output_dir) =  _setup_dirs()
+
+    gc = Gcalvault(
+        google_oauth2=_get_google_oauth2_mock(),
+        google_apis=_get_google_apis_mock(cal_list="less"))
+    gc.run(["sync", "foo.bar@gmail.com", "-c", conf_dir, "-o", output_dir])
+    expected_files = [
+        "foo.bar@gmail.com.ics",
+        "family123456789@group.calendar.google.com.ics",
+    ]
+    _assert_ics_files_match(output_dir, expected_files)
+
+    os.remove(os.path.join(output_dir, "family123456789@group.calendar.google.com.ics"))
+
+    gc = Gcalvault(
+        google_oauth2=_get_google_oauth2_mock(),
+        google_apis=_get_google_apis_mock(
+            cal_list="less",
+            cal_files={"family123456789@group.calendar.google.com": None},
+            cal_files_as_allowlist=True))
+    gc.run(["sync", "foo.bar@gmail.com", "-c", conf_dir, "-o", output_dir])
+    expected_files_after = expected_files
+    _assert_ics_files_match(output_dir, expected_files_after)
+
+def test_etags_some_changed():
+    (conf_dir, output_dir) =  _setup_dirs()
+
+    gc = Gcalvault(
+        google_oauth2=_get_google_oauth2_mock(),
+        google_apis=_get_google_apis_mock(cal_list="less"))
+    gc.run(["sync", "foo.bar@gmail.com", "-c", conf_dir, "-o", output_dir])
+    expected_files = [
+        "foo.bar@gmail.com.ics",
+        "family123456789@group.calendar.google.com.ics",
+    ]
+    _assert_ics_files_match(output_dir, expected_files)
+
+    gc = Gcalvault(
+        google_oauth2=_get_google_oauth2_mock(),
+        google_apis=_get_google_apis_mock(
+            cal_list="less_alt_etag",
+            cal_files={"foo.bar@gmail.com": "foo.bar@gmail.com_alt.ics"},
+            cal_files_as_allowlist=True))
+    gc.run(["sync", "foo.bar@gmail.com", "-c", conf_dir, "-o", output_dir])
+    expected_files_after = expected_files
+    _assert_ics_files_match(output_dir, expected_files_after, check_file_content=False)
+    _assert_ics_file_content_match(output_dir, "foo.bar@gmail.com.ics", "foo.bar@gmail.com_alt.ics")
+    _assert_ics_file_content_match(output_dir, "family123456789@group.calendar.google.com.ics")
+
+def test_etags_some_added():
+    (conf_dir, output_dir) =  _setup_dirs()
+
+    gc = Gcalvault(
+        google_oauth2=_get_google_oauth2_mock(),
+        google_apis=_get_google_apis_mock(cal_list="less"))
+    gc.run(["sync", "foo.bar@gmail.com", "-c", conf_dir, "-o", output_dir])
+    expected_files = [
+        "foo.bar@gmail.com.ics",
+        "family123456789@group.calendar.google.com.ics",
+    ]
+    _assert_ics_files_match(output_dir, expected_files)
+
+    gc = Gcalvault(
+        google_oauth2=_get_google_oauth2_mock(),
+        google_apis=_get_google_apis_mock(
+            cal_files={
+                "foo.baz@gmail.com": None,
+                "en.usa#holiday@group.v.calendar.google.com": None,
+            },
+            cal_files_as_allowlist=True))
+    gc.run(["sync", "foo.bar@gmail.com", "-c", conf_dir, "-o", output_dir])
+    expected_files_after = [
+        "foo.bar@gmail.com.ics",
+        "foo.baz@gmail.com.ics",
+        "family123456789@group.calendar.google.com.ics",
+        "en.usa#holiday@group.v.calendar.google.com.ics",
+    ]
+    _assert_ics_files_match(output_dir, expected_files_after)
+
 def test_sync_export_only():
     (conf_dir, output_dir) =  _setup_dirs()
 
@@ -300,9 +400,13 @@ def _get_google_oauth2_mock(new_authorization=False, email="foo.bar@gmail.com"):
 
     return google_oauth2
 
-def _get_google_apis_mock(cal_list=None):
+def _get_google_apis_mock(cal_list=None, cal_files={}, cal_files_as_allowlist=False):
     def request_cal_as_ical(cal_id, credentials):
-        return _read_data_file(cal_id + ".ics")
+        if cal_files_as_allowlist:
+            assert cal_id in cal_files
+        cal_file = cal_files[cal_id] if cal_id in cal_files else None
+        cal_file = cal_id + ".ics" if cal_file is None else cal_file
+        return _read_data_file(cal_file)
 
     google_apis = GoogleApis()
     cal_list_file = f"cal_list_{cal_list}.json" if cal_list else "cal_list.json"
@@ -312,12 +416,17 @@ def _get_google_apis_mock(cal_list=None):
 
     return google_apis
 
-def _assert_ics_files_match(output_dir, expected_files):
+def _assert_ics_files_match(output_dir, expected_files, check_file_content=True):
     actual_files = [os.path.basename(f) for f in glob.glob(os.path.join(output_dir, "*.ics"))]
     assert len(expected_files) == len(actual_files)
     for file_name in expected_files:
         assert file_name in actual_files
-        assert _read_file(output_dir, file_name) == _read_data_file(file_name)
+        if check_file_content:
+            _assert_ics_file_content_match(output_dir, file_name, file_name)
+
+def _assert_ics_file_content_match(output_dir, output_file_name, data_file_name=None):
+    data_file_name = data_file_name if data_file_name else output_file_name
+    assert _read_file(output_dir, output_file_name) == _read_data_file(data_file_name)
 
 def _setup_dirs():
     conf_dir = Path("/tmp/conf")
