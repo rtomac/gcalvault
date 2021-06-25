@@ -168,9 +168,8 @@ class Gcalvault:
         calendars = []
         calendar_list = self._google_apis.request_cal_list(credentials)
         for item in calendar_list['items']:
-            etag = item['etag'].strip('"')
             calendars.append(
-                Calendar(item['id'], item['summary'], etag, item['accessRole']))
+                Calendar(item['id'], item['summary'], item['etag'], item['accessRole']))
         return calendars
 
     def _clean_output_dir(self, calendars):
@@ -327,12 +326,13 @@ class ETagManager():
         self._cache = self._read_cache_file()
 
     def test_for_change_and_save(self, object_name, etag):
-        key = object_name.strip().lower()
+        key = "_".join(object_name.strip().lower().split())
+        value = "_".join(etag.strip().strip('"').split())
 
-        if key in self._cache and self._cache[key] == etag:
+        if key in self._cache and self._cache[key] == value:
             return False
-        
-        self._cache[key] = etag
+
+        self._cache[key] = value
         self._write_cache_file()
         return True
 
