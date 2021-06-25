@@ -168,8 +168,9 @@ class Gcalvault:
         calendars = []
         calendar_list = self._google_apis.request_cal_list(credentials)
         for item in calendar_list['items']:
+            etag = item['etag'].strip('"')
             calendars.append(
-                Calendar(item['id'], item['summary'], item['etag'], item['accessRole']))
+                Calendar(item['id'], item['summary'], etag, item['accessRole']))
         return calendars
 
     def _clean_output_dir(self, calendars):
