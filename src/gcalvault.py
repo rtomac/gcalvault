@@ -165,6 +165,8 @@ class Gcalvault:
             user_info = self._google_oauth2.request_user_info(credentials)
             profile_email = user_info['email'].lower().strip()
             if self.user != profile_email:
+                if os.path.exists(token_file_path):
+                    os.remove(token_file_path)
                 raise GcalvaultError(f"Authenticated user - {profile_email} - was different than <user> argument specified")
         
         return credentials
