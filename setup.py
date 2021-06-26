@@ -3,27 +3,30 @@ from setuptools import setup, find_packages
 import pathlib
 
 
+package_name = "gcalvault"
+cli_name = package_name
+
 dirname = os.path.dirname(__file__)
 version_file_path = os.path.join(dirname, "src", "VERSION.txt")
 readme_file_path = os.path.join(dirname, "README.md")
 
 
 setup(
-    name="gcalvault",
+    name=package_name,
     version=pathlib.Path(version_file_path).read_text().strip(),
     description="Command-line utility which exports all of a user's Google Calendars to iCal/ICS format for backup (or portability)",
+    keywords=["Google Calendar", "gcal", "backup", "export", "iCal", "ICS", "CalDav"],
+    url=f"http://github.com/rtomac/{package_name}",
     long_description=pathlib.Path(readme_file_path).read_text(),
     long_description_content_type="text/markdown",
-    keywords = ["Google Calendar", "gcal", "backup", "export", "iCal", "ICS", "CalDav"],
-    url="http://github.com/rtomac/gcalvault",
     author="Ryan Tomac",
     author_email="rtomac@gmail.com",
     license="MIT",
-    packages=["gcalvault"],
-    package_dir={"gcalvault":"src"},
-    package_data={"gcalvault":["*.txt"]},
+    packages=[package_name],
+    package_dir={package_name: "src"},
+    package_data={package_name: ["*.txt"]},
     include_package_data=True,
-    scripts=["bin/gcalvault"],
+    scripts=[f"bin/{cli_name}"],
     python_requires=">=3.6",
     install_requires=[
         "google-api-python-client==2.7.*",

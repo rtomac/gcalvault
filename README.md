@@ -12,7 +12,7 @@ Features:
 
 - Uses Google's [Identity Provider](https://developers.google.com/identity/protocols/oauth2) to authenticate (via OAuth2/OIDC)
 - Uses Google's [Calendar API](https://developers.google.com/calendar/api/v3/reference) to discover a user's calendars
-- Uses Google's [CalDav endpoints](https://developers.google.com/calendar/caldav/v2/guide) to download iCal/ICS calendars
+- Uses Google's [CalDAV endpoints](https://developers.google.com/calendar/caldav/v2/guide) to download iCal/ICS calendars
 - Uses [GitPython](https://gitpython.readthedocs.io) to manage local git repo for version history under the covers
 
 # Usage
