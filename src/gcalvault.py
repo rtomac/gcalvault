@@ -1,6 +1,5 @@
 import os
 import glob
-from git import exc
 import requests
 import urllib.parse
 import pathlib
