@@ -34,11 +34,11 @@ Options:
   -h --help         Show this help screen.
   --version         Show the program's version.
 
-This program will discover all of a user's calendars (via Google Calendar
+This program will discover all of a user's calendars (via Google's Calendar
 API) and export each of them as an .ics file. Alternately, it can be used to
 export a subset of calendars by specifying their calendar IDs.
 
-This program's sync function is meant to be used in one of two ways:
+The sync function is meant to be used in one of two ways:
 - As a simple export utility (via --export-only).
 - As a backup utility, with version history for each of the calendars exported
   (default behavior). Version history is stored under the covers in a git
