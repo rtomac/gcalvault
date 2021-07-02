@@ -42,7 +42,7 @@ class GoogleOAuth2():
                 token.write(credentials.to_json())
 
         return (credentials, new_authorization)
-    
+
     def request_user_info(self, credentials):
         with build('oauth2', 'v2', credentials=credentials) as service:
             return service.userinfo().get().execute()

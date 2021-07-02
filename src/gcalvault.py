@@ -65,20 +65,20 @@ class Gcalvault:
 
         if not self.export_only:
             self._repo = GitVaultRepo("gcalvault", self.output_dir, [".ics"])
-        
+
         calendars = self._get_calendars(credentials)
-        
+
         if self.ignore_roles:
             calendars = [cal for cal in calendars if cal.access_role not in self.ignore_roles]
 
         if self.includes:
             calendars = [cal for cal in calendars if cal.id in self.includes]
-        
+
         cal_ids = [cal.id for cal in calendars]
         for include in self.includes:
             if include not in cal_ids:
                 raise GcalvaultError(f"Specified calendar '{include}' was not found")
-        
+
         if self.clean:
             self._clean_output_dir(calendars)
 
@@ -86,16 +86,16 @@ class Gcalvault:
 
         if self._repo:
             self._repo.commit("gcalvault sync")
-    
+
     def usage(self):
         return pathlib.Path(usage_file_path).read_text().strip()
-    
+
     def version(self):
         return pathlib.Path(version_file_path).read_text().strip()
 
     def _parse_options(self, cli_args):
         show_help = show_version = False
-        
+
         try:
             (opts, pos_args) = gnu_getopt(
                 cli_args,
@@ -103,7 +103,7 @@ class Gcalvault:
                 ['export-only', 'clean', 'ignore-role=',
                     'conf-dir=', 'output-dir=', 'vault-dir=',
                     'client-id=', 'client-secret=',
-                    'help', 'version',]
+                    'help', 'version', ]
             )
         except GetoptError as e:
             raise GcalvaultError(e) from e
@@ -130,9 +130,13 @@ class Gcalvault:
 
         if len(opts) == 0 and len(pos_args) == 0:
             show_help = True
-        
-        if show_help: print(self.usage()); return False
-        if show_version: print(self.version()); return False
+
+        if show_help:
+            print(self.usage())
+            return False
+        if show_version:
+            print(self.version())
+            return False
 
         if len(pos_args) >= 1:
             self.command = pos_args[0]
@@ -147,7 +151,7 @@ class Gcalvault:
             raise GcalvaultError("Invalid <command> argument")
         if self.user is None:
             raise GcalvaultError("<user> argument is required")
-        
+
         return True
 
     def _ensure_dirs(self):
@@ -159,7 +163,7 @@ class Gcalvault:
 
         (credentials, new_authorization) = self._google_oauth2 \
             .get_credentials(token_file_path, self.client_id, self.client_secret, OAUTH_SCOPES, self.user)
-        
+
         if new_authorization:
             user_info = self._google_oauth2.request_user_info(credentials)
             profile_email = user_info['email'].lower().strip()
@@ -167,7 +171,7 @@ class Gcalvault:
                 if os.path.exists(token_file_path):
                     os.remove(token_file_path)
                 raise GcalvaultError(f"Authenticated user - {profile_email} - was different than <user> argument specified")
-        
+
         return credentials
 
     def _get_calendars(self, credentials):
@@ -187,15 +191,15 @@ class Gcalvault:
                 if self._repo:
                     self._repo.remove_file(file_name_on_disk)
                 print(f"Removed file '{file_name_on_disk}'")
-    
+
     def _dl_and_save_calendars(self, calendars, credentials):
         etags = ETagManager(self.conf_dir)
         for calendar in calendars:
             self._dl_and_save_calendar(calendar, credentials, etags)
-    
+
     def _dl_and_save_calendar(self, calendar, credentials, etags):
         cal_file_path = os.path.join(self.output_dir, calendar.file_name)
-        
+
         etag_changed = etags.test_for_change_and_save(calendar.id, calendar.etag)
         if os.path.exists(cal_file_path) and not etag_changed:
             print(f"Calendar '{calendar.name}' is up to date")
@@ -203,7 +207,7 @@ class Gcalvault:
 
         print(f"Downloading calendar '{calendar.name}'")
         ical = self._google_apis.request_cal_as_ical(calendar.id, credentials)
-        
+
         with open(cal_file_path, 'w') as file:
             file.write(ical)
         print(f"Saved calendar '{calendar.id}'")
@@ -228,7 +232,7 @@ class Calendar():
 
 
 class GoogleApis():
-    
+
     def request_cal_list(self, credentials):
         with build('calendar', 'v3', credentials=credentials) as service:
             return service.calendarList().list().execute()
