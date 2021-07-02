@@ -36,6 +36,9 @@ setup(
         "GitPython==3.1.*",
     ],
     extras_require={
+        "dev": [
+            "pycodestyle",
+        ],
         "test": [
             "pytest==6.*",
         ],
