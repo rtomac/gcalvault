@@ -7,7 +7,7 @@ package_name = "gcalvault"
 cli_name = package_name
 
 dirname = os.path.dirname(__file__)
-version_file_path = os.path.join(dirname, "src", "VERSION.txt")
+version_file_path = os.path.join(dirname, "src", package_name, "VERSION.txt")
 readme_file_path = os.path.join(dirname, "README.md")
 
 

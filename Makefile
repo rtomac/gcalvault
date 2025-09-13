@@ -1,7 +1,7 @@
 SHELL=/bin/bash
 
 pkg_name=gcalvault
-pkg_version:=$(shell cat src/VERSION.txt | xargs)
+pkg_version:=$(shell cat src/${pkg_name}/VERSION.txt | xargs)
 cli_name:=${pkg_name}
 
 container_hub_acct=rtomac
