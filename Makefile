@@ -15,7 +15,9 @@ all: build
 .PHONY: devenv
 devenv:
 	[ ! -d "./.devenv" ] && virtualenv .devenv || true
-	. ./.devenv/bin/activate && pip install '.[dev,test,release]'
+	. ./.devenv/bin/activate && pip install -e '.[dev,test,release]'
+	@echo ""
+	@echo "Run 'source ./.devenv/bin/activate' to activate the virtual env"
 
 .PHONY: dist
 dist:
