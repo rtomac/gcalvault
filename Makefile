@@ -67,10 +67,19 @@ docker-debug:
 
 .PHONY: release
 release: test dist
+	@read -p "Are you sure you're on the main branch, ready to tag and release? (y/n) " answer; [ "$$answer" = "y" ] || { echo "Aborted"; exit 1; };
+
+	git tag -a "v${pkg_version}" -m "Release version ${pkg_version}"
+	git push origin "v${pkg_version}"
+	gh release create "v${pkg_version}" dist/${pkg_name}-${pkg_version}.tar.gz --title "v${pkg_version}"
+
+	# Publish to test.pypi.org
 	twine upload --repository testpypi dist/${pkg_name}-${pkg_version}.tar.gz
-	
+
+	# Publish to pypi.org
 	twine upload dist/${pkg_name}-${pkg_version}.tar.gz
 
+	# Build and push multi-arch image to Docker Hub
 	docker buildx build \
 		--tag "${container_hub_acct}/${image_name}:${image_tag}" \
 		--tag "${container_hub_acct}/${image_name}:${image_version_tag}" \
