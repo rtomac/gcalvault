@@ -64,7 +64,7 @@ class Gcalvault:
         credentials = self._get_oauth2_credentials()
 
         if not self.export_only:
-            self._repo = GitVaultRepo("gcalvault", self.output_dir, [".ics"])
+            self._repo = GitVaultRepo("gcalvault", self.version(), self.output_dir, [".ics"])
 
         calendars = self._get_calendars(credentials)
 
