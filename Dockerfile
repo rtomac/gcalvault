@@ -8,5 +8,5 @@ RUN cd /usr/local/src \
     && pip install gcalvault-latest.tar.gz[test] \
     && mkdir -p /root/gcalvault
 
-WORKDIR /root/gcalvault
+WORKDIR /root
 ENTRYPOINT [ "gcalvault" ]
