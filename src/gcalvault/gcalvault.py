@@ -5,6 +5,7 @@ import urllib.parse
 import pathlib
 from getopt import gnu_getopt, GetoptError
 from googleapiclient.discovery import build
+from dotenv import load_dotenv
 
 from .google_oauth2 import GoogleOAuth2
 from .git_vault_repo import GitVaultRepo
@@ -27,6 +28,8 @@ GOOGLE_CALDAV_URI_FORMAT = "https://apidata.googleusercontent.com/caldav/v2/{cal
 
 COMMANDS = ['sync', 'noop']
 
+load_dotenv()
+
 dirname = os.path.dirname(__file__)
 usage_file_path = os.path.join(dirname, "USAGE.txt")
 version_file_path = os.path.join(dirname, "VERSION.txt")
@@ -41,8 +44,8 @@ class Gcalvault:
         self.export_only = False
         self.clean = False
         self.ignore_roles = []
-        self.conf_dir = os.path.expanduser("~/.gcalvault")
-        self.output_dir = os.getcwd()
+        self.conf_dir = os.getenv("GCALVAULT_CONF_DIR", os.path.expanduser("~/.gcalvault"))
+        self.output_dir = os.getenv("GCALVAULT_OUTPUT_DIR", os.path.join(os.getcwd(), 'gcalvault'))
         self.client_id = DEFAULT_CLIENT_ID
         self.client_secret = DEFAULT_CLIENT_SECRET
 

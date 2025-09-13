@@ -25,8 +25,9 @@ Options:
   -c --conf-dir     Directory where configuration is stored (e.g. access
                     token). Defaults to ~/.gcalvault.
   -o --output-dir --vault-dir
-                    Directory to which calendar .ics files are exported
-                    and/or stored. Defaults to the current working directory.
+                     Directory to which calendar .ics files are exported
+                    and/or stored. Defaults to a subfolder called 'gcalvault'
+                    under the current working directory.
   --client-id       Recommended. Custom OAuth2 client ID you've provisioned
                     with Google to use when authorizing user access.
   --client-secret   Client secret for custom client ID provided

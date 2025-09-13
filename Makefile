@@ -8,9 +8,9 @@ container_hub_acct=rtomac
 image_name:=${pkg_name}
 image_tag=latest
 image_version_tag:=${pkg_version}
-image_platforms=linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6
+image_platforms=linux/arm64,linux/amd64,linux/amd64/v2,linux/riscv64,linux/ppc64le,linux/s390x,linux/386,linux/arm/v7,linux/arm/v6
 
-all: build
+all: dist
 
 .PHONY: devenv
 devenv:
@@ -24,44 +24,49 @@ dist:
 	python3 setup.py sdist
 	ln -f "dist/${pkg_name}-${pkg_version}.tar.gz" "dist/${pkg_name}-latest.tar.gz"
 
-.PHONY: build
-build: dist
+.PHONY: test
+test:
+	pytest
+
+.PHONY: docker-build
+docker-build: dist
 	docker build \
 		-t ${image_name}:local \
 		.
 
-.PHONY: test
-test: build
+user=foo.bar@gmail.com
+.PHONY: docker-run
+docker-run:
 	docker run -it --rm \
 		-v ${PWD}/.conf:/root/.${pkg_name} \
-		-v ${PWD}/.output:/root/${pkg_name} \
+		-v ${PWD}/output:/root/${pkg_name} \
+		-v ${PWD}/bin/${cli_name}:/usr/local/bin/${cli_name} \
+		-v ${PWD}/src/${pkg_name}:/usr/local/lib/python3.9/site-packages/${pkg_name} \
+		${image_name}:local sync ${user}
+
+.PHONY: docker-test
+docker-test:
+	docker run -it --rm \
+		-v ${PWD}/.conf:/root/.${pkg_name} \
+		-v ${PWD}/output:/root/${pkg_name} \
 		-v ${PWD}:/usr/local/src/${pkg_name} \
+		--env-file ${PWD}/.env \
 		--workdir /usr/local/src/${pkg_name} \
 		--entrypoint pytest \
 		${image_name}:local
 
-.PHONY: debug
-debug: build
+.PHONY: docker-debug
+docker-debug:
 	docker run -it --rm \
 		-v ${PWD}/.conf:/root/.${pkg_name} \
-		-v ${PWD}/.output:/root/${pkg_name} \
+		-v ${PWD}/output:/root/${pkg_name} \
 		-v ${PWD}/bin/${cli_name}:/usr/local/bin/${cli_name} \
-		-v ${PWD}/src:/usr/local/lib/python3.9/site-packages/${pkg_name} \
-		-v ${PWD}/tests:/usr/local/src/${pkg_name}/tests \
-		--workdir /usr/local/src/${pkg_name} \
+		-v ${PWD}/src/${pkg_name}:/usr/local/lib/python3.9/site-packages/${pkg_name} \
 		--entrypoint /bin/bash \
 		${image_name}:local
 
-user=foo.bar@gmail.com
-.PHONY: run
-run: build
-	docker run -it --rm \
-		-v ${PWD}/.conf:/root/.${pkg_name} \
-		-v ${PWD}/.output:/root/${pkg_name} \
-		${image_name}:local sync ${user}
-
 .PHONY: release
-release: test
+release: test dist
 	twine upload --repository testpypi dist/${pkg_name}-${pkg_version}.tar.gz
 	
 	twine upload dist/${pkg_name}-${pkg_version}.tar.gz
