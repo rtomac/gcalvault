@@ -199,25 +199,6 @@ def test_sync_with_multi_ignore():
     _assert_ics_files_match(output_dir, expected_files)
 
 
-def test_sync_new_authorization_doesnt_match():
-    (conf_dir, output_dir) = _setup_dirs()
-
-    gc = Gcalvault(
-        google_oauth2=_get_google_oauth2_mock(new_authorization=True, email="john.doe@gmail.com"),
-        google_apis=_get_google_apis_mock(cal_list='empty'))
-    with pytest.raises(GcalvaultError):
-        gc.run(["sync", "foo.bar@gmail.com", "-c", conf_dir, "-o", output_dir])
-
-
-def test_sync_new_authorization_does_match():
-    (conf_dir, output_dir) = _setup_dirs()
-
-    gc = Gcalvault(
-        google_oauth2=_get_google_oauth2_mock(new_authorization=True, email="foo.bar@gmail.com"),
-        google_apis=_get_google_apis_mock(cal_list='empty'))
-    gc.run(["sync", "foo.bar@gmail.com", "-c", conf_dir, "-o", output_dir])
-
-
 def test_clean():
     (conf_dir, output_dir) = _setup_dirs()
 
@@ -410,7 +391,7 @@ def test_git_commits():
 
 
 def _get_google_oauth2_mock(new_authorization=False, email="foo.bar@gmail.com"):
-    google_oauth2 = GoogleOAuth2()
+    google_oauth2 = GoogleOAuth2("gcalvault", "gcalvault authorize")
 
     credentials = MagicMock(token="phony")
     google_oauth2.get_credentials = MagicMock(return_value=(credentials, new_authorization))
@@ -480,7 +461,8 @@ def _read_file(dir_path, file_name):
 def _assert_git_repo_state(output_dir, repo_exists=True, commit_count=None, last_commit_file_count=None):
     assert os.path.exists(os.path.join(output_dir, ".git")) == repo_exists
     if commit_count is not None or last_commit_file_count is not None:
-        commits = list(Repo(output_dir).iter_commits('master', max_count=10))
+        repo = Repo(output_dir)
+        commits = list(repo.iter_commits(rev=repo.head.reference, max_count=10))
         if commit_count is not None:
             assert len(commits) == commit_count
         if last_commit_file_count is not None:
