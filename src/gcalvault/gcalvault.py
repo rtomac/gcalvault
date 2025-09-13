@@ -26,7 +26,7 @@ OAUTH_SCOPES = [
 
 GOOGLE_CALDAV_URI_FORMAT = "https://apidata.googleusercontent.com/caldav/v2/{cal_id}/events"
 
-COMMANDS = ['sync', 'noop']
+COMMANDS = ['sync', 'login', 'authorize', 'noop']
 
 load_dotenv()
 
@@ -50,7 +50,10 @@ class Gcalvault:
         self.client_secret = DEFAULT_CLIENT_SECRET
 
         self._repo = None
-        self._google_oauth2 = google_oauth2 if google_oauth2 is not None else GoogleOAuth2()
+        self._google_oauth2 = google_oauth2 if google_oauth2 is not None else GoogleOAuth2(
+            app_name="gcalvault",
+            authorize_command="gcalvault authorize {email_addr}",
+        )
         self._google_apis = google_apis if google_apis is not None else GoogleApis()
 
     def run(self, cli_args):
@@ -64,7 +67,9 @@ class Gcalvault:
 
     def sync(self):
         self._ensure_dirs()
-        credentials = self._get_oauth2_credentials()
+
+        (credentials, _) = self._google_oauth2.get_credentials(
+            self._token_file_path(), self.client_id, self.client_secret, OAUTH_SCOPES, self.user)
 
         if not self.export_only:
             self._repo = GitVaultRepo("gcalvault", self.version(), self.output_dir, [".ics"])
@@ -89,6 +94,16 @@ class Gcalvault:
 
         if self._repo:
             self._repo.commit("gcalvault sync")
+
+    def login(self):
+        self._ensure_dirs()
+        self._google_oauth2.authz_and_save_token(
+            self._token_file_path(), self.client_id, self.client_secret, OAUTH_SCOPES, self.user)
+
+    def authorize(self):
+        self._ensure_dirs()
+        self._google_oauth2.authz_and_export_token(
+            self.client_id, self.client_secret, OAUTH_SCOPES, self.user)
 
     def usage(self):
         return pathlib.Path(usage_file_path).read_text().strip()
@@ -160,22 +175,9 @@ class Gcalvault:
     def _ensure_dirs(self):
         for dir in [self.conf_dir, self.output_dir]:
             pathlib.Path(dir).mkdir(parents=True, exist_ok=True)
-
-    def _get_oauth2_credentials(self):
-        token_file_path = os.path.join(self.conf_dir, f"{self.user}.token.json")
-
-        (credentials, new_authorization) = self._google_oauth2 \
-            .get_credentials(token_file_path, self.client_id, self.client_secret, OAUTH_SCOPES, self.user)
-
-        if new_authorization:
-            user_info = self._google_oauth2.request_user_info(credentials)
-            profile_email = user_info['email'].lower().strip()
-            if self.user != profile_email:
-                if os.path.exists(token_file_path):
-                    os.remove(token_file_path)
-                raise GcalvaultError(f"Authenticated user - {profile_email} - was different than <user> argument specified")
-
-        return credentials
+    
+    def _token_file_path(self):
+        return os.path.join(self.conf_dir, f"{self.user}.token.json")
 
     def _get_calendars(self, credentials):
         calendars = []
@@ -219,7 +221,7 @@ class Gcalvault:
             self._repo.add_file(calendar.file_name)
 
 
-class GcalvaultError(RuntimeError):
+class GcalvaultError(ValueError):
     pass
 
 
