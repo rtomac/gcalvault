@@ -39,7 +39,7 @@ Simply export calendars, do not save version history:
 gcalvault sync foo.bar@gmail.com --export-only
 ```
 
-See the [CLI help](https://github.com/rtomac/gcalvault/blob/main/src/USAGE.txt) for full usage and other notes.
+See the [CLI help](https://github.com/rtomac/gcalvault/blob/main/src/gcalvault/USAGE.txt) for full usage and other notes.
 
 # Requirements
 
@@ -77,6 +77,17 @@ You can provide your client ID and secret to gcalvault as follows:
 ```
 gcalvault sync foo.bar@gmail.com --client-id my_client_id --client-secret my_client_secret
 ```
+
+If you are providing your own Google OAuth2 client, you will need to ensure the following APIs and OAuth2 scopes are enabled for the project/client in GCP.
+
+Google APIs:
+- Google Calendar API: `calendar-json.googleapis.com`
+- CalDAV API: `caldav.googleapis.com`
+
+OAuth2 scopes:
+- `openid`
+- `https://www.googleapis.com/auth/userinfo.email`
+- `https://www.googleapis.com/auth/calendar.readonly`
 
 # Development
 
