@@ -52,7 +52,7 @@ class Gcalvault:
         self._repo = None
         self._google_oauth2 = google_oauth2 if google_oauth2 is not None else GoogleOAuth2(
             app_name="gcalvault",
-            authorize_command="gcalvault authorize {email_addr}",
+            authorize_command_fn=self._authorize_command,
         )
         self._google_apis = google_apis if google_apis is not None else GoogleApis()
 
@@ -178,6 +178,12 @@ class Gcalvault:
     
     def _token_file_path(self):
         return os.path.join(self.conf_dir, f"{self.user}.token.json")
+
+    def _authorize_command(self, client_id, client_secret, email_addr):
+        flags = ""
+        if client_id != DEFAULT_CLIENT_ID:
+            flags = f' --client-id "{client_id}" --client-secret "{client_secret}"'
+        return f"gcalvault authorize {email_addr}{flags}"
 
     def _get_calendars(self, credentials):
         calendars = []
