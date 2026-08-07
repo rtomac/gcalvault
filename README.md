@@ -1,3 +1,5 @@
+> **⚠️ This project is no longer maintained.** For automated backup of Google calendars, I would recommend [vdirsyncer](https://vdirsyncer.pimutils.org). For one-time backups, [Google Takeout](https://takeout.google.com) works fine.
+
 # Overview
 
 Gcalvault is a command-line utility which exports all of a user's Google Calendars to iCal/ICS format for backup (or portability).
