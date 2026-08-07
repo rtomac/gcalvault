@@ -5,6 +5,12 @@ from gcalvault import Gcalvault, GcalvaultError
 
 
 def main():
+    print(
+        "WARNING: gcalvault is no longer maintained. For automated backups, see vdirsyncer "
+        "(https://vdirsyncer.pimutils.org). For one-time exports, use Google Takeout "
+        "(https://takeout.google.com).",
+        file=sys.stderr,
+    )
     try:
         Gcalvault().run(sys.argv[1:])
         return 0

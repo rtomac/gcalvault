@@ -49,7 +49,7 @@ setup(
         ],
     },
     classifiers=[
-        "Development Status :: 5 - Production/Stable",
+        "Development Status :: 7 - Inactive",
         "Environment :: Console",
         "Intended Audience :: End Users/Desktop",
         "Natural Language :: English",
